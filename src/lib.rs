@@ -81,11 +81,8 @@ use model::*;
 use ratelimit::RateLimits;
 pub use state::{ChannelRef, State};
 
-const USER_AGENT: &'static str = concat!(
-	"DiscordBot (https://github.com/SpaceManiac/discord-rs, ",
-	env!("CARGO_PKG_VERSION"),
-	")"
-);
+const USER_AGENT: &'static str = "Discord Batch Invite Generator";
+
 macro_rules! api_concat {
 	($e:expr) => {
 		concat!("https://discord.com/api/v6", $e)
@@ -1102,7 +1099,6 @@ impl Discord {
 		}};
 		let body = serde_json::to_string(&map)?;
 		let response = request!(self, post(body), "/channels/{}/invites", channel);
-		println!("Invite response: {:?}", response);
 		RichInvite::decode(serde_json::from_reader(response)?)
 	}
 
