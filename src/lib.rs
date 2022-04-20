@@ -1101,6 +1101,7 @@ impl Discord {
 		}};
 		let body = serde_json::to_string(&map)?;
 		let response = request!(self, post(body), "/channels/{}/invites", channel);
+		println!("Invite response: {:?}", response);
 		RichInvite::decode(serde_json::from_reader(response)?)
 	}
 

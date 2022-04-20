@@ -4,3 +4,4 @@ Cargo.lock
 # Local IDE configuration
 /.vscode/tasks.json
 /.vscode/settings.json
+/.idea/
