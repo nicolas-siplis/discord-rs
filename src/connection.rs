@@ -1,5 +1,3 @@
-#[cfg(feature = "voice")]
-use std::collections::HashMap;
 use std::sync::mpsc;
 
 use websocket::client::{Client, Receiver, Sender};
@@ -9,13 +7,10 @@ use serde_json;
 
 use internal::Status;
 use model::*;
-#[cfg(feature = "voice")]
-use voice::VoiceConnection;
 use {Error, ReceiverExt, Result, SenderExt};
 
 const GATEWAY_VERSION: u64 = 6;
 
-#[cfg(feature = "voice")]
 macro_rules! finish_connection {
 	($($name1:ident: $val1:expr),*; $($name2:ident: $val2:expr,)*) => { Connection {
 		$($name1: $val1,)*
@@ -33,8 +28,6 @@ macro_rules! finish_connection {
 pub struct ConnectionBuilder<'a> {
 	base_url: String,
 	token: &'a str,
-
-	large_threshold: Option<u32>,
 	shard: Option<[u8; 2]>,
 	intents: Option<Intents>,
 	// TODO: presence
@@ -45,7 +38,6 @@ impl<'a> ConnectionBuilder<'a> {
 		ConnectionBuilder {
 			base_url,
 			token,
-			large_threshold: None,
 			shard: None,
 			intents: None,
 		}
@@ -100,10 +92,6 @@ impl<'a> ConnectionBuilder<'a> {
 pub struct Connection {
 	keepalive_channel: mpsc::Sender<Status>,
 	receiver: Receiver<WebSocketStream>,
-	#[cfg(feature = "voice")]
-	voice_handles: HashMap<Option<ServerId>, VoiceConnection>,
-	#[cfg(feature = "voice")]
-	user_id: UserId,
 	ws_url: String,
 	token: String,
 	session_id: Option<String>,
@@ -207,9 +195,6 @@ impl Connection {
 				session_id: Some(session_id),
 				last_sequence: sequence,
 				identify: identify;
-				// voice only
-				user_id: ready.user.id,
-				voice_handles: HashMap::new(),
 			),
 			ready,
 		))
@@ -256,33 +241,6 @@ impl Connection {
 		let _ = self.keepalive_channel.send(Status::SendMessage(msg));
 	}
 
-	/// Get a handle to the voice connection for a server.
-	///
-	/// Pass `None` to get the handle for group and one-on-one calls.
-	#[cfg(feature = "voice")]
-	pub fn voice(&mut self, server_id: Option<ServerId>) -> &mut VoiceConnection {
-		let Connection {
-			ref mut voice_handles,
-			user_id,
-			ref keepalive_channel,
-			..
-		} = *self;
-		voice_handles.entry(server_id).or_insert_with(|| {
-			VoiceConnection::__new(server_id, user_id, keepalive_channel.clone())
-		})
-	}
-
-	/// Drop the voice connection for a server, forgetting all settings.
-	///
-	/// Calling `.voice(server_id).disconnect()` will disconnect from voice but retain the mute
-	/// and deaf status, audio source, and audio receiver.
-	///
-	/// Pass `None` to drop the connection for group and one-on-one calls.
-	#[cfg(feature = "voice")]
-	pub fn drop_voice(&mut self, server_id: Option<ServerId>) {
-		self.voice_handles.remove(&server_id);
-	}
-
 	/// Receive an event over the websocket, blocking until one is available.
 	pub fn recv_event(&mut self) -> Result<Event> {
 		loop {
@@ -320,21 +278,7 @@ impl Connection {
 				Ok(GatewayEvent::Dispatch(sequence, event)) => {
 					self.last_sequence = sequence;
 					let _ = self.keepalive_channel.send(Status::Sequence(sequence));
-					#[cfg(feature = "voice")]
-					{
-						if let Event::VoiceStateUpdate(server_id, ref voice_state) = event {
-							self.voice(server_id).__update_state(voice_state);
-						}
-						if let Event::VoiceServerUpdate {
-							server_id,
-							ref endpoint,
-							ref token,
-							..
-						} = event
-						{
-							self.voice(server_id).__update_server(endpoint, token);
-						}
-					}
+
 					return Ok(event);
 				}
 				Ok(GatewayEvent::Heartbeat(sequence)) => {

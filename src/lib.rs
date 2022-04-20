@@ -46,8 +46,6 @@ extern crate log;
 #[cfg(feature = "voice")]
 extern crate byteorder;
 #[cfg(feature = "voice")]
-extern crate opus;
-#[cfg(feature = "voice")]
 extern crate sodiumoxide;
 
 use std::collections::BTreeMap;
@@ -59,8 +57,6 @@ mod connection;
 mod error;
 mod ratelimit;
 mod state;
-#[cfg(feature = "voice")]
-pub mod voice;
 
 macro_rules! cdn_concat {
 	($e:expr) => {
@@ -1656,10 +1652,6 @@ impl Timer {
 		self.next_tick_at = time::Instant::now();
 	}
 
-	fn defer(&mut self) {
-		self.next_tick_at = time::Instant::now() + self.tick_len;
-	}
-
 	fn check_tick(&mut self) -> bool {
 		if time::Instant::now() >= self.next_tick_at {
 			self.next_tick_at = self.next_tick_at + self.tick_len;
@@ -1667,14 +1659,6 @@ impl Timer {
 		} else {
 			false
 		}
-	}
-
-	fn sleep_until_tick(&mut self) {
-		let now = time::Instant::now();
-		if self.next_tick_at > now {
-			std::thread::sleep(self.next_tick_at - now);
-		}
-		self.next_tick_at = self.next_tick_at + self.tick_len;
 	}
 }
 

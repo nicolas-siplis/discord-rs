@@ -1,7 +1,5 @@
 use chrono::ParseError as ChronoError;
 use hyper::Error as HyperError;
-#[cfg(feature = "voice")]
-use opus::Error as OpusError;
 use serde_json::Error as JsonError;
 use serde_json::Value;
 use std::error::Error as StdError;
@@ -25,9 +23,6 @@ pub enum Error {
 	WebSocket(WebSocketError),
 	/// A `std::io` module error
 	Io(IoError),
-	/// An error in the Opus library, with the function name and error code
-	#[cfg(feature = "voice")]
-	Opus(OpusError),
 	/// A websocket connection was closed, possibly with a message
 	Closed(Option<u16>, String),
 	/// A json decoding error, with a description and the offending value
@@ -90,13 +85,6 @@ impl From<WebSocketError> for Error {
 	}
 }
 
-#[cfg(feature = "voice")]
-impl From<OpusError> for Error {
-	fn from(err: OpusError) -> Error {
-		Error::Opus(err)
-	}
-}
-
 impl Display for Error {
 	#[allow(deprecated)]
 	fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
@@ -106,8 +94,6 @@ impl Display for Error {
 			Error::Json(ref inner) => inner.fmt(f),
 			Error::WebSocket(ref inner) => inner.fmt(f),
 			Error::Io(ref inner) => inner.fmt(f),
-			#[cfg(feature = "voice")]
-			Error::Opus(ref inner) => inner.fmt(f),
 			Error::Command(cmd, _) => write!(f, "Command failed: {}", cmd),
 			_ => f.write_str(self.description()),
 		}
@@ -123,8 +109,6 @@ impl StdError for Error {
 			Error::Json(ref inner) => inner.description(),
 			Error::WebSocket(ref inner) => inner.description(),
 			Error::Io(ref inner) => inner.description(),
-			#[cfg(feature = "voice")]
-			Error::Opus(ref inner) => inner.description(),
 			Error::Closed(_, _) => "Connection closed",
 			Error::Decode(msg, _) | Error::Protocol(msg) | Error::Other(msg) => msg,
 			Error::Status(status, _) => status
@@ -142,8 +126,6 @@ impl StdError for Error {
 			Error::Json(ref inner) => Some(inner),
 			Error::WebSocket(ref inner) => Some(inner),
 			Error::Io(ref inner) => Some(inner),
-			#[cfg(feature = "voice")]
-			Error::Opus(ref inner) => Some(inner),
 			_ => None,
 		}
 	}
