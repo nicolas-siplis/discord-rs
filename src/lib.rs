@@ -1098,6 +1098,7 @@ impl Discord {
 			"max_age": max_age,
 			"max_uses": max_uses,
 			"temporary": temporary,
+			"target_type": null,
 		}};
 		let body = serde_json::to_string(&map)?;
 		let response = request!(self, post(body), "/channels/{}/invites", channel);
