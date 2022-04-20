@@ -85,7 +85,7 @@ const USER_AGENT: &'static str = "Discord Batch Invite Generator";
 
 macro_rules! api_concat {
 	($e:expr) => {
-		concat!("https://discord.com/api/v6", $e)
+		concat!("https://discord.com/api/v9", $e)
 	};
 }
 macro_rules! status_concat {
