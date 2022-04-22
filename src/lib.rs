@@ -1082,15 +1082,17 @@ impl Discord {
 	pub fn create_invite(
 		&self,
 		channel: ChannelId,
-		max_age: u64,
-		max_uses: u64,
+		max_age: u32,
+		max_uses: u8,
 		temporary: bool,
+		unique: bool,
 	) -> Result<RichInvite> {
 		let map = json! {{
 			"validate": null,
 			"max_age": max_age,
 			"max_uses": max_uses,
 			"temporary": temporary,
+			"unique": unique,
 			"target_type": null,
 		}};
 		let body = serde_json::to_string(&map)?;
