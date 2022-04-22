@@ -1103,7 +1103,7 @@ impl Discord {
 	/// Delete an invite. See `get_invite` for details.
 	pub fn delete_invite(&self, invite: &str) -> Result<Invite> {
 		let invite = resolve_invite(invite);
-		let response = request!(self, delete, "/invite/{}", invite);
+		let response = request!(self, delete, "/invites/{}", invite);
 		Invite::decode(serde_json::from_reader(response)?)
 	}
 
